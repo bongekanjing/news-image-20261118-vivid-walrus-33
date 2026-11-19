@@ -36,9 +36,28 @@ if (isPng) {
   if (w > MAX_SIDE || h > MAX_SIDE) {
     throw new Error(`entry.png is ${w}x${h}, over the ${MAX_SIDE}x${MAX_SIDE} limit`);
   }
+  // The gate wants a whole file: every chunk through to IEND. A truncated copy
+  // would otherwise be uploaded and refused, wasting one of the day's entries.
+  let i = 8;
+  let sawHeader = false;
+  let sawEnd = false;
+  while (i + 8 <= bytes.length) {
+    const len = bytes.readUInt32BE(i);
+    const type = bytes.toString('latin1', i + 4, i + 8);
+    if (type === 'IHDR') sawHeader = true;
+    i += 12 + len;
+    if (type === 'IEND') { sawEnd = true; break; }
+  }
+  if (!sawHeader) throw new Error('entry.png has no IHDR chunk');
+  if (!sawEnd) throw new Error('entry.png is truncated: no IEND chunk');
+  if (i !== bytes.length) throw new Error(`entry.png has ${bytes.length - i} trailing bytes`);
 }
+
+// The entries are what the judge sees, so record what shipped.
+import { createHash } from 'node:crypto';
+const digest = createHash('sha256').update(bytes).digest('hex');
 
 mkdirSync(dstDir, { recursive: true });
 copyFileSync(src, dst);
 
-console.log(`wrote ${dst}: ${size} bytes, ${isPng ? 'PNG' : 'JPEG'}`);
+console.log(`wrote ${dst}: ${size} bytes, ${isPng ? 'PNG' : 'JPEG'}, sha256 ${digest.slice(0, 16)}…`);
