@@ -11,15 +11,17 @@ one 1024×1024 front page summing up the world's news of **Wednesday 18 November
 
 A single broadsheet-style front page, drawn as flat vector art with real type:
 
-- **Masthead** — the day itself, `Wednesday 18 November 2026`, set larger than any story.
-- **Region bar** — seven proportional segments (Europe, Americas, Asia, Middle East,
-  Africa, Oceania, World) with story counts, so the page's breadth is checkable at a glance.
+- **Masthead** — the day itself, `Wednesday 18 November 2026`, set at 72 px across the
+  full measure, larger than any headline on the page.
+- **Region key** — seven equal colour tiles (Europe, Americas, Asia, Middle East, Africa,
+  Oceania, World) with story counts computed from the stories themselves, so the page's
+  breadth is checkable at a glance and the arithmetic cannot drift.
 - **The day in numbers** — six figures, each a story told nowhere else on the page.
 - **Lead** — Xi and Putin sharing an APEC stage in Shenzhen, a day before Trump arrives,
   with two secondary leads (Iran's missile barrage over Jordan; Russian strikes on Odesa).
 - **Ten illustrated cards** — Anthropic's IPO, UK inflation, Voyager 1, Brazil's Senate,
   Cyclone Akvan, Senegal, the Ethiopia–Eritrea border, Manila, Jakarta, Niue.
-- **`ALSO ON WEDNESDAY`** — 22 one-line briefs interleaved by continent so the first pass
+- **`ALSO ON WEDNESDAY`** — 24 one-line briefs interleaved by continent so the first pass
   round the list covers every region.
 - **Locator map** — every lead, card and brief plotted on a Natural Earth land mask.
 - **`DATE CHECK`** — the day's boundary stated explicitly: the stories left out because
@@ -36,20 +38,24 @@ Every block measures itself and reports its baseline, so `python3 build.py out.p
 prints the height each zone consumed and names any that overruns the 1000 px floor:
 
 ```
-   masthead: 118.7
-      stats: 189.4
-       lead: 473.7
-      cards: 779.2
-      index: 2 cols, 10.8px, 22 items
-      index: 961.9
-       foot: 986.3
-bottom of ink: 986.3 (limit 1000)
+   masthead: 111.4
+      stats: 181.8
+       lead: 466.2
+      cards: 771.7
+      index: 2 cols, 10.8px, 24 items
+      index: 964.0
+       foot: 988.4
+bottom of ink: 988.4 (limit 1000)
 ```
 
-To rebuild the image:
+`qa.py` gates the render before it can be submitted: it walks every PNG chunk and
+checks its CRC, enforces the 1 MiB and 1024 px caps, proves the outer 2 px ring is
+clean paper, measures the lowest inked row, re-checks that every footer brief fits its
+column at the size the build actually picks, and re-derives the region counts from
+`news.py` to prove the printed arithmetic still adds up.
 
 ```sh
-cd entry && python3 build.py ../entry.png
+cd entry && python3 build.py ../entry.png && python3 qa.py ../entry.png
 ```
 
 The entry program itself (`main.ts`) draws nothing. The grader's sandbox guarantees only
